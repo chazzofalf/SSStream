@@ -4,7 +4,7 @@ namespace SStreamLib
 {
     public class SSStreamEncoderStream : FacadeStream
     {
-        public SSStreamEncoderStream(Stream stream) : base(new DecoderStream(stream))
+        public SSStreamEncoderStream(Stream stream) : base(new EncoderStream(stream))
         {
         }
     }

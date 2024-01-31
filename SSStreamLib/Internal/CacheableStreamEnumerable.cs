@@ -29,6 +29,7 @@ namespace SStreamLib.Internal
             inputStream.CopyTo(cache);
             inputStream.Flush();
             inputStream.Close();
+            cache.Close();
 
         }
 
@@ -50,7 +51,7 @@ namespace SStreamLib.Internal
             while (len > 0 && !centerFound)
             {
                 slidingWindowIndex = 0;
-                while (slidingWindowIndex < bytes.Length)
+                while (slidingWindowIndex < bytes.Length && !centerFound)
                 {
                     if (slidingWindow.Count == 0)
                     {
@@ -132,7 +133,7 @@ namespace SStreamLib.Internal
             List<byte> slidingWindow = new List<byte>();
             var slidingWindowSize = endblock.Length;
             bool endFound = false;
-            var len = inputStream.Read(bytes);
+            //var len = inputStream.Read(bytes);
             var found_beginning = false;
             var found_end = false;
             var found_beginning_prev = false;
@@ -163,7 +164,7 @@ namespace SStreamLib.Internal
                     count++;
                     if (count == 4096)
                     {
-                        output.Append(buffer.ToArray());
+                        output = output.Append(buffer.ToArray());
                         count = 0;
                         buffer = Enumerable.Empty<byte>();
                     }
@@ -176,94 +177,103 @@ namespace SStreamLib.Internal
                     var output = fin.Output;
                     if (count > 0)
                     {
-                        output.Append(buffer.ToArray());
+                        output = output.Append(buffer.ToArray());
                     }
                     return output;
                 });
             foreach (var block in iter)
             {
                 slidingWindowIndex = 0;
-                if (slidingWindow.Count == 0)
-                {
-                    if (block.Length >= slidingWindowSize)
-                    {
-                        slidingWindow.AddRange(block.Take(slidingWindowSize));
-                        slidingWindowIndex = slidingWindowSize;
-                    }
-                    else
-                    {
-                        inputStream.Close();
-                        throw new IOException("There is no center!", new ArgumentException());
-                    }
-                }
-                else if (slidingWindow.Count == slidingWindowSize)
-                {
-                    slidingWindow.RemoveAt(0);
-                    slidingWindow.Append(bytes[slidingWindowIndex++]);
-                }
-                else
-                {
-                    inputStream.Close();
-                    throw new IOException("Sliding window too short!", new ArgumentException());
-                }
-                is_magic = slidingWindow.Count > magic.Length && !slidingWindow
-                        .Take(magic.Length)
-                        .Zip(magic, (srcbyte, testbyte) => srcbyte == testbyte)
-                        .Where(test => !test)
-                        .Any();
-                is_eof = slidingWindow.Count == endblock.Length && !slidingWindow
-                    .Zip(endblock, (srcbyte, testbyte) => srcbyte == testbyte)
-                    .Where(test => !test)
-                    .Any();
-                found_beginning_prev = found_beginning_prev || found_beginning;
-                found_end_prev = found_end_prev || found_end;
-                found_beginning = is_magic && !is_eof;
-                found_end = is_magic && is_eof;
-                if (!found_beginning_prev)
+                while (slidingWindowIndex < block.Length && !found_end)
                 {
                     
-                    if (found_beginning)
+                    if (slidingWindow.Count == 0)
                     {
-                        cache_out = cacheFile.OpenForWriting();
-                        cache_out_buffer.AddRange(slidingWindow);
-                    }
-                    else
-                    {
-                        found_end = is_magic && is_eof;
-                        if (found_end)
+                        if (block.Length >= slidingWindowSize)
                         {
-                            inputStream.Close();
-                            throw new IOException("Check FindMyCenter. This is not really the center.", new ArgumentException());
-                        }
-                    }
-
-                }
-                else if (!found_end_prev)
-                {
-                    if (found_end)
-                    {
-                        if (cache_out != null)
-                        {
-                            cache_out.Write(cache_out_buffer.ToArray());
-                            cache_out.Flush();
-                            cache_out.Close();
-                            inputStream.Close();                            
-                            break;
+                            slidingWindow.AddRange(block.Take(slidingWindowSize));
+                            slidingWindowIndex = slidingWindowSize;
                         }
                         else
                         {
                             inputStream.Close();
-                            throw new IOException("Check FindMyCenter. This is not really the center.", new ArgumentException());
+                            throw new IOException("There is no center!", new ArgumentException());
                         }
-
-                        
+                    }
+                    else if (slidingWindow.Count == slidingWindowSize)
+                    {
+                        slidingWindow.RemoveAt(0);
+                        slidingWindow.Add(block[slidingWindowIndex++]);
                     }
                     else
                     {
-                        cache_out_buffer.Append(slidingWindow.Last());
+                        inputStream.Close();
+                        throw new IOException("Sliding window too short!", new ArgumentException());
+                    }
+                    is_magic = slidingWindow.Count > magic.Length && !slidingWindow
+                            .Take(magic.Length)
+                            .Zip(magic, (srcbyte, testbyte) => srcbyte == testbyte)
+                            .Where(test => !test)
+                            .Any();
+                    is_eof = slidingWindow.Count == endblock.Length && !slidingWindow
+                        .Zip(endblock, (srcbyte, testbyte) => srcbyte == testbyte)
+                        .Where(test => !test)
+                        .Any();
+                    found_beginning_prev = found_beginning_prev || found_beginning;
+                    found_end_prev = found_end_prev || found_end;
+                    found_beginning = is_magic && !is_eof;
+                    found_end = is_magic && is_eof;
+                    if (!found_beginning_prev)
+                    {
+
+                        if (found_beginning)
+                        {
+                            cache_out = cacheFile.OpenForWriting();
+                            cache_out_buffer.AddRange(slidingWindow);
+                        }
+                        else
+                        {
+                            found_end = is_magic && is_eof;
+                            if (found_end)
+                            {
+                                inputStream.Close();
+                                throw new IOException("Check FindMyCenter. This is not really the center.", new ArgumentException());
+                            }
+                        }
+
+                    }
+                    else if (!found_end_prev)
+                    {
+                        if (found_end)
+                        {
+                            if (cache_out != null)
+                            {
+                                cache_out.Write(cache_out_buffer.ToArray());
+                                cache_out.Flush();
+                                cache_out.Close();
+                                inputStream.Close();
+                                break;
+                            }
+                            else
+                            {
+                                inputStream.Close();
+                                throw new IOException("Check FindMyCenter. This is not really the center.", new ArgumentException());
+                            }
+
+
+                        }
+                        else
+                        {
+                            
+                            cache_out_buffer.Add(slidingWindow.Last());
+                            if (cache_out_buffer.Count == 4096)
+                            {
+                                cache_out.Write(cache_out_buffer.ToArray());
+                                cache_out_buffer.Clear();
+                            }
+                        }
                     }
                 }
-                found_beginning = is_magic && !is_eof;
             }
 
             

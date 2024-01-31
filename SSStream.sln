@@ -5,7 +5,7 @@ VisualStudioVersion = 17.8.34525.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SSStreamLib", "SSStreamLib\SSStreamLib.csproj", "{6A58154F-ACC3-439F-80A5-126F90396EF6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SSStream.Tests", "SSStream.Tests\SSStream.Tests.csproj", "{E8F2D224-C133-42B9-95AA-54914127BEBF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SSStreamLib.Tests", "SSStream.Tests\SSStreamLib.Tests.csproj", "{E8F2D224-C133-42B9-95AA-54914127BEBF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

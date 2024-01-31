@@ -55,7 +55,7 @@ namespace SStreamLib.Internal
             public bool MoveNext()
             {
                 if (eof) { return false; }
-                if (block == null || blockIndex == block.Length)
+                if (block == null || blockIndex == blockLength)
                 {
                     block = new byte[4096];
                     blockLength = stream.Read(block);
