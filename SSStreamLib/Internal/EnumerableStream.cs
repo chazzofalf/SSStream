@@ -20,7 +20,7 @@
 
         public override void Flush()
         {
-            throw new IOException();
+            
         }
 
         public override int Read(byte[] buffer, int offset, int count)

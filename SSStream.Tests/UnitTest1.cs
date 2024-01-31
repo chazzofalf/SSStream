@@ -20,7 +20,7 @@ namespace SSStreamLib.Tests
             istream.Seek(0, SeekOrigin.Begin);
             stream.Close();
             var ostream = new MemoryStream();
-            var estream = new SStreamLib.SSStreamEncoderStream(istream);
+            var estream = SSStreamLib.SSStream.WrapEncoder(istream);
             estream.CopyTo(ostream);
             out_data = ostream.ToArray();
             done_flag[0] = true;
@@ -32,7 +32,7 @@ namespace SSStreamLib.Tests
             i2stream.Seek(0, SeekOrigin.Begin);
             //stream.Close();
             var o2stream = new MemoryStream();
-            var e2stream = new SStreamLib.SSStreamDecoderStream(i2stream);
+            var e2stream = SSStreamLib.SSStream.WrapDecoder(i2stream);
             e2stream.CopyTo(o2stream);
             dec_data = o2stream.ToArray();
 

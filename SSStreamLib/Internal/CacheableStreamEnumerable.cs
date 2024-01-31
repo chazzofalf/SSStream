@@ -69,7 +69,7 @@ namespace SStreamLib.Internal
                     else if (slidingWindow.Count == slidingWindowSize)
                     {
                         slidingWindow.RemoveAt(0);
-                        slidingWindow.Append(bytes[slidingWindowIndex++]);
+                        slidingWindow.Add(bytes[slidingWindowIndex++]);
                     }
                     else
                     {
